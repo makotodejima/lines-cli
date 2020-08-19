@@ -1,46 +1,56 @@
 use std::env;
+use std::fs::File;
+use std::fs::OpenOptions;
+use std::io::prelude::*;
+use std::io::{self, BufRead};
 
-struct TodoItem {
+struct Item {
     name: String,
-    completed: char,
 }
 
-impl TodoItem {
-    fn new(name: String) -> TodoItem {
-        TodoItem {
-            name: name,
-            completed: ' ',
+impl Item {
+    fn new(name: String) -> Item {
+        Item { name: name }
+    }
+}
+
+struct ItemList {
+    list: Vec<Item>,
+}
+
+impl ItemList {
+    fn new() -> ItemList {
+        ItemList { list: Vec::new() }
+    }
+
+    fn load(&mut self, path: String) {
+        let file = File::open(path).expect("Can not find file");
+        let lines = io::BufReader::new(file).lines();
+        for line in lines {
+            if let Ok(ln) = line {
+                self.list.push(Item::new(ln));
+            }
         }
     }
-}
 
-struct TodoList {
-    list: Vec<TodoItem>,
-}
-
-impl TodoList {
-    fn new() -> TodoList {
-        TodoList { list: Vec::new() }
-    }
     fn add(&mut self, name: String) {
-        self.list.push(TodoItem::new(name))
-    }
-
-    fn toggle_completed(&mut self, index: usize) {
-        if self.list[index].completed == ' ' {
-            self.list[index].completed = 'x';
-        } else {
-            self.list[index].completed = ' ';
+        let mut file_by_line = OpenOptions::new()
+            .append(true)
+            .open("lines.txt")
+            .expect("Can not find file");
+        if let Err(e) = writeln!(file_by_line, "{}", name) {
+            eprintln!("could not write line: {}", e);
         }
+        self.list.push(Item::new(name))
     }
 
-    fn remove_task(&mut self, index: usize) {
+    fn remove_item(&mut self, index: usize) {
         self.list.remove(index);
     }
 
     fn print(&self) {
         for (index, item) in self.list.iter().enumerate() {
-            println!("{} [{}] - {}", index, item.completed, item.name);
+            println!("{} - {}", index, item.name);
         }
     }
 }
@@ -48,45 +58,38 @@ impl TodoList {
 enum Command {
     Get,
     Add(String),
-    Done(usize),
     Remove(usize),
 }
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    let mut todo_list = TodoList::new();
+    let mut item_list = ItemList::new();
+
+    item_list.load("lines.txt".to_string());
+
+    if args.len() == 1 {
+        panic!("No args!!");
+    }
 
     let command = match args[1].as_str() {
-        "get" => Command::Get,
         "add" => Command::Add(args[2].clone()),
-        "done" => Command::Done(
-            args[2]
-                .parse()
-                .expect("Error converting to integer for done"),
-        ),
         "remove" => Command::Remove(
             args[2]
                 .parse()
                 .expect("Error converting to integer for remove"),
         ),
-        _ => panic!("You must provide a command!"),
+        "get" | _ => Command::Get,
     };
-    todo_list.add("Say hi".to_string());
-    todo_list.add("Do something with Rust".to_string());
 
     match command {
-        Command::Get => todo_list.print(),
+        Command::Get => item_list.print(),
         Command::Add(name) => {
-            todo_list.add(name);
-            todo_list.print();
-        }
-        Command::Done(index) => {
-            todo_list.toggle_completed(index);
-            todo_list.print();
+            item_list.add(name);
+            item_list.print();
         }
         Command::Remove(index) => {
-            todo_list.remove_task(index);
-            todo_list.print();
+            item_list.remove_item(index);
+            item_list.print();
         }
     }
 }
