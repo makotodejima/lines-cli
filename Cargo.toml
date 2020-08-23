@@ -1,7 +1,11 @@
 [package]
-name = "lines-cli"
+name = "lns"
 version = "0.1.0"
 authors = ["Makoto Dejima <makotodejima@gmail.com>"]
+license = "MIT"
+description = "CLI for lines"
+documentation = "https://github.com/makotodejima/lines-cli"
+keywords = ["cli"]
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
