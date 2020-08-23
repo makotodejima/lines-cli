@@ -1,5 +1,3 @@
-one
-two
-three
-four
-five
+Install binary
+Add tag grouping
+Interactive cli
